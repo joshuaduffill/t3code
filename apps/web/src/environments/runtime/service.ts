@@ -1,6 +1,5 @@
 import {
-  type AuthEnvironmentScope,
-  AuthStandardClientScopes,
+  AuthEnvironmentScope,
   type DesktopSshEnvironmentBootstrap,
   type DesktopSshEnvironmentTarget,
   type EnvironmentId,
