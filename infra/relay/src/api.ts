@@ -1,5 +1,6 @@
 import { verifyToken } from "@clerk/backend";
 import { sql as drizzleSql } from "drizzle-orm";
+import type * as Cause from "effect/Cause";
 import * as Data from "effect/Data";
 import * as Crypto from "effect/Crypto";
 import * as DateTime from "effect/DateTime";
@@ -18,6 +19,7 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import { encodeOAuthScope } from "@t3tools/shared/oauthScope";
+import { causeErrorTag } from "@t3tools/shared/observability";
 
 import {
   RelayApi,
@@ -733,14 +735,6 @@ const currentTraceId = Effect.currentParentSpan.pipe(
   Effect.orElseSucceed(() => "unavailable"),
 );
 
-function taggedErrorName(error: unknown): string {
-  return typeof error === "object" && error !== null && "_tag" in error
-    ? String(error._tag)
-    : error instanceof Error
-      ? error.name
-      : typeof error;
-}
-
 function annotateRelayRequest(endpoint: string) {
   return Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest;
@@ -764,11 +758,11 @@ function annotateRelayRequest(endpoint: string) {
 }
 
 function logRelayApiFailure(endpoint: string, traceId: string) {
-  return (cause: unknown) =>
+  return (cause: Cause.Cause<unknown>) =>
     Effect.logWarning("relay api request failed", {
       endpoint,
       traceId,
-      errorTag: taggedErrorName(cause),
+      errorTag: causeErrorTag(cause),
       cause,
     });
 }
