@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { extractAgentNotificationDeepLink } from "./notificationPayload";
+import {
+  extractAgentNotificationDeepLink,
+  routeAgentNotificationResponseOnce,
+} from "./notificationPayload";
 
-function responseWithData(data: Record<string, unknown>) {
+function responseWithData(data: Record<string, unknown>, identifier = "notification-1") {
   return {
     notification: {
       request: {
+        identifier,
         content: {
           data,
         },
@@ -74,5 +78,29 @@ describe("extractAgentNotificationDeepLink", () => {
       extractAgentNotificationDeepLink(responseWithData({ deepLink: "/threads/env/thread?x=1" })),
     ).toBeNull();
     expect(extractAgentNotificationDeepLink({})).toBeNull();
+  });
+});
+
+describe("routeAgentNotificationResponseOnce", () => {
+  it("does not navigate twice when the initial and listener responses refer to one notification", () => {
+    const handledResponseIds = new Set<string>();
+    const navigations: Array<string> = [];
+    const response = responseWithData({
+      environmentId: "env",
+      threadId: "thread",
+    });
+
+    routeAgentNotificationResponseOnce({
+      handledResponseIds,
+      response,
+      navigate: (deepLink) => navigations.push(deepLink),
+    });
+    routeAgentNotificationResponseOnce({
+      handledResponseIds,
+      response,
+      navigate: (deepLink) => navigations.push(deepLink),
+    });
+
+    expect(navigations).toEqual(["/threads/env/thread"]);
   });
 });

@@ -92,19 +92,6 @@ const headersToRecord = (headers: Headers): Record<string, string> => {
   return record;
 };
 
-const bodyToString = async (body: BodyInit | null | undefined): Promise<string | undefined> => {
-  if (body === undefined || body === null) return undefined;
-  if (typeof body === "string") return body;
-  if (body instanceof URLSearchParams) return body.toString();
-  if (body instanceof Blob) return await body.text();
-  if (body instanceof FormData) return new URLSearchParams(body as never).toString();
-  if (body instanceof ArrayBuffer) return new TextDecoder().decode(body);
-  if (ArrayBuffer.isView(body)) {
-    return new TextDecoder().decode(body);
-  }
-  return undefined;
-};
-
 function installDesktopClerkFetchProxy(): void {
   if (desktopClerkFetchInstalled) return;
   const bridge = window.desktopBridge;
@@ -119,9 +106,9 @@ function installDesktopClerkFetchProxy(): void {
     }
 
     const body =
-      init?.body === undefined && request.method !== "GET" && request.method !== "HEAD"
-        ? await request.clone().text()
-        : await bodyToString(init?.body);
+      request.method === "GET" || request.method === "HEAD"
+        ? undefined
+        : await request.clone().text();
     const result = await bridge.fetchCloudAuth({
       url: request.url,
       method: request.method,

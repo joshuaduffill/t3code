@@ -1,18 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 
-import { extractAgentNotificationDeepLink } from "./notificationPayload";
+import { routeAgentNotificationResponseOnce } from "./notificationPayload";
 
 export function useAgentNotificationNavigation(): void {
   const router = useRouter();
+  const handledResponseIds = useRef(new Set<string>());
 
   useEffect(() => {
-    const handleResponse = (response: unknown): void => {
-      const deepLink = extractAgentNotificationDeepLink(response);
-      if (deepLink) {
-        router.push(deepLink as never);
-      }
+    const handleResponse = (response: Notifications.NotificationResponse): void => {
+      routeAgentNotificationResponseOnce({
+        handledResponseIds: handledResponseIds.current,
+        response,
+        navigate: (deepLink) => router.push(deepLink as never),
+      });
     };
 
     const subscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
@@ -20,7 +22,9 @@ export function useAgentNotificationNavigation(): void {
       .then((response) => {
         if (response) {
           handleResponse(response);
+          return Notifications.clearLastNotificationResponseAsync();
         }
+        return undefined;
       })
       .catch(() => undefined);
 

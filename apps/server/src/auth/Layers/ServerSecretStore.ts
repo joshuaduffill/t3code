@@ -3,13 +3,12 @@ import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
-import * as Predicate from "effect/Predicate";
-import * as PlatformError from "effect/PlatformError";
 
 import { ServerConfig } from "../../config.ts";
 import {
   SecretStoreError,
   ServerSecretStore,
+  isSecretAlreadyExistsError,
   type ServerSecretStoreShape,
 } from "../Services/ServerSecretStore.ts";
 
@@ -31,9 +30,6 @@ export const makeServerSecretStore = Effect.gen(function* () {
   );
 
   const resolveSecretPath = (name: string) => path.join(serverConfig.secretsDir, `${name}.bin`);
-
-  const isPlatformError = (u: unknown): u is PlatformError.PlatformError =>
-    Predicate.isTagged(u, "PlatformError");
 
   const get: ServerSecretStoreShape["get"] = (name) =>
     fileSystem.readFile(resolveSecretPath(name)).pipe(
@@ -120,7 +116,7 @@ export const makeServerSecretStore = Effect.gen(function* () {
           ),
           Effect.flatMap((generated) => create(name, generated).pipe(Effect.as(generated))),
           Effect.catchTag("SecretStoreError", (error) =>
-            isPlatformError(error.cause) && error.cause.reason._tag === "AlreadyExists"
+            isSecretAlreadyExistsError(error)
               ? get(name).pipe(
                   Effect.flatMap((created) =>
                     created !== null

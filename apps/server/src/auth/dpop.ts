@@ -9,7 +9,11 @@ import {
   ServerAuthInternalError,
   ServerAuthInvalidCredentialError,
 } from "./Services/ServerAuth.ts";
-import { ServerSecretStore } from "./Services/ServerSecretStore.ts";
+import {
+  SecretStoreError,
+  ServerSecretStore,
+  isSecretAlreadyExistsError,
+} from "./Services/ServerSecretStore.ts";
 
 function firstHeaderValue(value: string | undefined): string | undefined {
   const first = value?.split(",")[0]?.trim();
@@ -26,6 +30,19 @@ export function requestAbsoluteUrl(request: HttpServerRequest.HttpServerRequest)
     return new URL(request.originalUrl, `${proto}://${host}`).href;
   }
 }
+
+export const mapDpopReplayStoreError = (
+  error: SecretStoreError,
+): ServerAuthInvalidCredentialError | ServerAuthInternalError =>
+  isSecretAlreadyExistsError(error)
+    ? new ServerAuthInvalidCredentialError({
+        reason: "invalid_credential",
+        cause: "DPoP proof replayed.",
+      })
+    : new ServerAuthInternalError({
+        message: "Failed to record DPoP proof replay state.",
+        cause: error,
+      });
 
 export const verifyRequestDpopProof = (input: {
   readonly request: HttpServerRequest.HttpServerRequest;
@@ -76,14 +93,7 @@ export const verifyRequestDpopProof = (input: {
         ),
       )
       .pipe(
-        Effect.catchTag("SecretStoreError", () =>
-          Effect.fail(
-            new ServerAuthInvalidCredentialError({
-              reason: "invalid_credential",
-              cause: "DPoP proof replayed.",
-            }),
-          ),
-        ),
+        Effect.catchTag("SecretStoreError", (error) => Effect.fail(mapDpopReplayStoreError(error))),
       );
     return result.thumbprint;
   });

@@ -1,11 +1,19 @@
 import * as Data from "effect/Data";
 import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
+import * as PlatformError from "effect/PlatformError";
+import * as Predicate from "effect/Predicate";
 
 export class SecretStoreError extends Data.TaggedError("SecretStoreError")<{
   readonly message: string;
   readonly cause?: unknown;
 }> {}
+
+const isPlatformError = (value: unknown): value is PlatformError.PlatformError =>
+  Predicate.isTagged(value, "PlatformError");
+
+export const isSecretAlreadyExistsError = (error: SecretStoreError): boolean =>
+  isPlatformError(error.cause) && error.cause.reason._tag === "AlreadyExists";
 
 export interface ServerSecretStoreShape {
   readonly get: (name: string) => Effect.Effect<Uint8Array | null, SecretStoreError>;

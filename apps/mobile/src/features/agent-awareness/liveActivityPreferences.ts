@@ -31,7 +31,7 @@ export function setLiveActivityUpdatesEnabled(input: {
     }
 
     yield* Effect.forEach(
-      input.connections,
+      input.connections.filter((connection) => connection.bearerToken !== null),
       (connection) => linkEnvironmentToCloud({ clerkToken, connection }),
       { concurrency: "unbounded" },
     );

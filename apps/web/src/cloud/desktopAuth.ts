@@ -26,6 +26,9 @@ interface ClerkLike {
   readonly environment?: ClerkEnvironmentLike;
 }
 
+const isClerkOAuthProviderSetting = (value: unknown): value is ClerkOAuthProviderSetting =>
+  typeof value === "object" && value !== null;
+
 const OAUTH_LABELS: Readonly<Record<string, string>> = {
   oauth_apple: "Apple",
   oauth_discord: "Discord",
@@ -82,6 +85,7 @@ export function resolveDesktopCloudAuthOAuthOptions(
 
   return uniqueOptions(
     Object.values(social as Record<string, ClerkOAuthProviderSetting>)
+      .filter(isClerkOAuthProviderSetting)
       .filter((provider) => provider.enabled !== false && provider.authenticatable !== false)
       .map((provider) => {
         const strategy = isDesktopCloudAuthOAuthStrategy(provider.strategy)

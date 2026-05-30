@@ -105,4 +105,25 @@ describe("liveActivityPreferences", () => {
     expect(refreshAgentAwarenessRegistration).toHaveBeenCalledTimes(1);
     expect(linkEnvironmentToCloud).not.toHaveBeenCalled();
   });
+
+  it("does not try to re-link managed relay connections without bearer credentials", async () => {
+    const managedConnection: SavedRemoteConnection = {
+      ...connection,
+      bearerToken: null,
+    };
+
+    await runWithHttpClient(
+      setLiveActivityUpdatesEnabled({
+        enabled: true,
+        clerkToken: "clerk-token",
+        connections: [connection, managedConnection],
+      }),
+    );
+
+    expect(linkEnvironmentToCloud).toHaveBeenCalledTimes(1);
+    expect(linkEnvironmentToCloud).toHaveBeenCalledWith({
+      clerkToken: "clerk-token",
+      connection,
+    });
+  });
 });

@@ -101,6 +101,7 @@ const make = Effect.gen(function* () {
           .where(
             and(
               eq(relayEnvironmentCredentials.environmentId, input.environmentId),
+              eq(relayEnvironmentCredentials.environmentPublicKey, input.environmentPublicKey),
               ne(relayEnvironmentCredentials.credentialId, credential.credentialId),
               isNull(relayEnvironmentCredentials.revokedAt),
             ),
