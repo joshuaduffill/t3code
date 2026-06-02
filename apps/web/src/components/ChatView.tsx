@@ -41,6 +41,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { useVcsStatus } from "~/lib/vcsStatusState";
+import { filterDelamainPeersForRepo } from "~/delamainPeers";
 import { usePrimaryEnvironmentId } from "../environments/primary";
 import { readEnvironmentApi } from "../environmentApi";
 import { isElectron } from "../env";
@@ -104,6 +105,7 @@ import { useMediaQuery } from "../hooks/useMediaQuery";
 import { RIGHT_PANEL_INLINE_LAYOUT_MEDIA_QUERY } from "../rightPanelLayout";
 import { BranchToolbar } from "./BranchToolbar";
 import { resolveShortcutCommand, shortcutLabelForCommand } from "../keybindings";
+import DelamainSidebar from "./DelamainSidebar";
 import PlanSidebar from "./PlanSidebar";
 import ThreadTerminalDrawer from "./ThreadTerminalDrawer";
 import { ChevronDownIcon, TriangleAlertIcon, WifiOffIcon } from "lucide-react";
@@ -867,6 +869,7 @@ export default function ChatView(props: ChatViewProps) {
   const [pendingUserInputQuestionIndexByRequestId, setPendingUserInputQuestionIndexByRequestId] =
     useState<Record<string, number>>({});
   const [planSidebarOpen, setPlanSidebarOpen] = useState(false);
+  const [delamainSidebarOpen, setDelamainSidebarOpen] = useState(false);
   const shouldUsePlanSidebarSheet = useMediaQuery(RIGHT_PANEL_INLINE_LAYOUT_MEDIA_QUERY);
   // Tracks whether the user explicitly dismissed the sidebar for the active turn.
   const planSidebarDismissedForTurnRef = useRef<string | null>(null);
@@ -1553,7 +1556,9 @@ export default function ChatView(props: ChatViewProps) {
     refetchInterval: 10_000,
     retry: false,
   });
-  const hasDeployedDelamainPeers = (delamainPeersQuery.data?.peers.length ?? 0) > 0;
+  const hasDeployedDelamainPeers =
+    filterDelamainPeersForRepo(delamainPeersQuery.data?.peers ?? [], activeProject?.cwd).length >
+    0;
   const showPlanFollowUpPrompt =
     pendingUserInputs.length === 0 &&
     interactionMode === "plan" &&
@@ -2411,6 +2416,9 @@ export default function ChatView(props: ChatViewProps) {
   }, [handleInteractionModeChange, interactionMode]);
   const togglePlanSidebar = useCallback(() => {
     setPlanSidebarOpen((open) => {
+      if (!open) {
+        setDelamainSidebarOpen(false);
+      }
       if (open) {
         planSidebarDismissedForTurnRef.current =
           activePlan?.turnId ?? sidebarProposedPlan?.turnId ?? "__dismissed__";
@@ -2425,6 +2433,17 @@ export default function ChatView(props: ChatViewProps) {
     planSidebarDismissedForTurnRef.current =
       activePlan?.turnId ?? sidebarProposedPlan?.turnId ?? "__dismissed__";
   }, [activePlan?.turnId, sidebarProposedPlan?.turnId]);
+  const toggleDelamainSidebar = useCallback(() => {
+    setDelamainSidebarOpen((open) => {
+      if (!open) {
+        setPlanSidebarOpen(false);
+      }
+      return !open;
+    });
+  }, []);
+  const closeDelamainSidebar = useCallback(() => {
+    setDelamainSidebarOpen(false);
+  }, []);
 
   const persistThreadSettingsForNextTurn = useCallback(
     async (input: {
@@ -3876,6 +3895,7 @@ export default function ChatView(props: ChatViewProps) {
                   planSidebarLabel={planSidebarLabel}
                   planSidebarOpen={planSidebarOpen}
                   hasDeployedDelamainPeers={hasDeployedDelamainPeers}
+                  delamainSidebarOpen={delamainSidebarOpen}
                   runtimeMode={runtimeMode}
                   interactionMode={interactionMode}
                   lockedProvider={lockedProvider}
@@ -3910,6 +3930,7 @@ export default function ChatView(props: ChatViewProps) {
                   handleRuntimeModeChange={handleRuntimeModeChange}
                   handleInteractionModeChange={handleInteractionModeChange}
                   togglePlanSidebar={togglePlanSidebar}
+                  toggleDelamainSidebar={toggleDelamainSidebar}
                   focusComposer={focusComposer}
                   scheduleComposerFocus={scheduleComposerFocus}
                   setThreadError={setThreadError}
@@ -3974,6 +3995,14 @@ export default function ChatView(props: ChatViewProps) {
             onClose={closePlanSidebar}
           />
         ) : null}
+        {delamainSidebarOpen && !shouldUsePlanSidebarSheet ? (
+          <DelamainSidebar
+            environmentId={environmentId}
+            projectRepoRoot={activeProjectCwd ?? undefined}
+            mode="sidebar"
+            onClose={closeDelamainSidebar}
+          />
+        ) : null}
       </div>
       {/* end horizontal flex container */}
 
@@ -3994,7 +4023,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddTerminalContext={addTerminalContextToDraft}
         />
       ))}
-      {shouldUsePlanSidebarSheet ? (
+      {shouldUsePlanSidebarSheet && planSidebarOpen ? (
         <RightPanelSheet open={planSidebarOpen} onClose={closePlanSidebar}>
           <PlanSidebar
             activePlan={activePlan}
@@ -4006,6 +4035,16 @@ export default function ChatView(props: ChatViewProps) {
             timestampFormat={timestampFormat}
             mode="sheet"
             onClose={closePlanSidebar}
+          />
+        </RightPanelSheet>
+      ) : null}
+      {shouldUsePlanSidebarSheet && delamainSidebarOpen ? (
+        <RightPanelSheet open={delamainSidebarOpen} onClose={closeDelamainSidebar}>
+          <DelamainSidebar
+            environmentId={environmentId}
+            projectRepoRoot={activeProjectCwd ?? undefined}
+            mode="sheet"
+            onClose={closeDelamainSidebar}
           />
         </RightPanelSheet>
       ) : null}

@@ -178,11 +178,14 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
   interactionMode: ProviderInteractionMode;
   runtimeMode: RuntimeMode;
   showPlanToggle: boolean;
+  showDelamainToggle: boolean;
   planSidebarLabel: string;
   planSidebarOpen: boolean;
+  delamainSidebarOpen: boolean;
   onToggleInteractionMode: () => void;
   onRuntimeModeChange: (mode: RuntimeMode) => void;
   onTogglePlanSidebar: () => void;
+  onToggleDelamainSidebar: () => void;
 }) {
   const runtimeModeOption = runtimeModeConfig[props.runtimeMode];
   const RuntimeModeIcon = runtimeModeOption.icon;
@@ -272,6 +275,30 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
           >
             <ListTodoIcon />
             <span className="sr-only sm:not-sr-only">{props.planSidebarLabel}</span>
+          </Button>
+        </>
+      ) : null}
+
+      {props.showDelamainToggle ? (
+        <>
+          <Separator orientation="vertical" className="mx-0.5 hidden h-4 sm:block" />
+          <Button
+            variant="ghost"
+            className={cn(
+              "shrink-0 whitespace-nowrap px-2 sm:px-3",
+              props.delamainSidebarOpen
+                ? "text-blue-400 hover:text-blue-300"
+                : "text-muted-foreground/70 hover:text-foreground/80",
+            )}
+            size="sm"
+            type="button"
+            onClick={props.onToggleDelamainSidebar}
+            title={
+              props.delamainSidebarOpen ? "Hide delamain sidebar" : "Show delamain sidebar"
+            }
+          >
+            <BotIcon />
+            <span className="sr-only sm:not-sr-only">Delamain</span>
           </Button>
         </>
       ) : null}
@@ -419,6 +446,7 @@ export interface ChatComposerProps {
   planSidebarLabel: string;
   planSidebarOpen: boolean;
   hasDeployedDelamainPeers: boolean;
+  delamainSidebarOpen: boolean;
 
   // Mode
   runtimeMode: RuntimeMode;
@@ -474,6 +502,7 @@ export interface ChatComposerProps {
   handleRuntimeModeChange: (mode: RuntimeMode) => void;
   handleInteractionModeChange: (mode: ProviderInteractionMode) => void;
   togglePlanSidebar: () => void;
+  toggleDelamainSidebar: () => void;
 
   focusComposer: () => void;
   scheduleComposerFocus: () => void;
@@ -518,6 +547,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     planSidebarLabel,
     planSidebarOpen,
     hasDeployedDelamainPeers,
+    delamainSidebarOpen,
     runtimeMode,
     interactionMode,
     lockedProvider,
@@ -549,6 +579,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     handleRuntimeModeChange,
     handleInteractionModeChange,
     togglePlanSidebar,
+    toggleDelamainSidebar,
     focusComposer,
     scheduleComposerFocus,
     setThreadError,
@@ -952,9 +983,8 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
     isComposerCollapsedMobile && !isComposerApprovalState && pendingUserInputs.length === 0;
 
   const composerFooterHasWideActions = showPlanFollowUpPrompt || activePendingProgress !== null;
-  const showPlanSidebarToggle = Boolean(
-    activePlan || sidebarProposedPlan || planSidebarOpen || hasDeployedDelamainPeers,
-  );
+  const showPlanSidebarToggle = Boolean(activePlan || sidebarProposedPlan || planSidebarOpen);
+  const showDelamainSidebarToggle = Boolean(hasDeployedDelamainPeers || delamainSidebarOpen);
   const composerFooterActionLayoutKey = useMemo(() => {
     if (activePendingProgress) {
       return `pending:${activePendingProgress.questionIndex}:${activePendingProgress.isLastQuestion}:${activePendingIsResponding}`;
@@ -2336,15 +2366,18 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
 
                 {isComposerFooterCompact ? (
                   <CompactComposerControlsMenu
-                    activePlan={showPlanSidebarToggle}
+                    showPlanToggle={showPlanSidebarToggle}
+                    showDelamainToggle={showDelamainSidebarToggle}
                     interactionMode={interactionMode}
                     planSidebarLabel={planSidebarLabel}
                     planSidebarOpen={planSidebarOpen}
+                    delamainSidebarOpen={delamainSidebarOpen}
                     runtimeMode={runtimeMode}
                     showInteractionModeToggle={composerProviderControls.showInteractionModeToggle}
                     traitsMenuContent={providerTraitsMenuContent}
                     onToggleInteractionMode={toggleInteractionMode}
                     onTogglePlanSidebar={togglePlanSidebar}
+                    onToggleDelamainSidebar={toggleDelamainSidebar}
                     onRuntimeModeChange={handleRuntimeModeChange}
                   />
                 ) : (
@@ -2360,11 +2393,14 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                       interactionMode={interactionMode}
                       runtimeMode={runtimeMode}
                       showPlanToggle={showPlanSidebarToggle}
+                      showDelamainToggle={showDelamainSidebarToggle}
                       planSidebarLabel={planSidebarLabel}
                       planSidebarOpen={planSidebarOpen}
+                      delamainSidebarOpen={delamainSidebarOpen}
                       onToggleInteractionMode={toggleInteractionMode}
                       onRuntimeModeChange={handleRuntimeModeChange}
                       onTogglePlanSidebar={togglePlanSidebar}
+                      onToggleDelamainSidebar={toggleDelamainSidebar}
                     />
                   </>
                 )}

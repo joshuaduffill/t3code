@@ -1,6 +1,6 @@
 import { ProviderInteractionMode, RuntimeMode } from "@t3tools/contracts";
 import { memo, type ReactNode } from "react";
-import { EllipsisIcon, ListTodoIcon } from "lucide-react";
+import { BotIcon, EllipsisIcon, ListTodoIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Menu,
@@ -13,15 +13,18 @@ import {
 } from "../ui/menu";
 
 export const CompactComposerControlsMenu = memo(function CompactComposerControlsMenu(props: {
-  activePlan: boolean;
+  showPlanToggle: boolean;
+  showDelamainToggle: boolean;
   interactionMode: ProviderInteractionMode;
   planSidebarLabel: string;
   planSidebarOpen: boolean;
+  delamainSidebarOpen: boolean;
   runtimeMode: RuntimeMode;
   showInteractionModeToggle: boolean;
   traitsMenuContent?: ReactNode;
   onToggleInteractionMode: () => void;
   onTogglePlanSidebar: () => void;
+  onToggleDelamainSidebar: () => void;
   onRuntimeModeChange: (mode: RuntimeMode) => void;
 }) {
   return (
@@ -73,7 +76,7 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
           <MenuRadioItem value="auto-accept-edits">Auto-accept edits</MenuRadioItem>
           <MenuRadioItem value="full-access">Full access</MenuRadioItem>
         </MenuRadioGroup>
-        {props.activePlan ? (
+        {props.showPlanToggle ? (
           <>
             <MenuDivider />
             <MenuItem onClick={props.onTogglePlanSidebar}>
@@ -81,6 +84,15 @@ export const CompactComposerControlsMenu = memo(function CompactComposerControls
               {props.planSidebarOpen
                 ? `Hide ${props.planSidebarLabel.toLowerCase()} sidebar`
                 : `Show ${props.planSidebarLabel.toLowerCase()} sidebar`}
+            </MenuItem>
+          </>
+        ) : null}
+        {props.showDelamainToggle ? (
+          <>
+            <MenuDivider />
+            <MenuItem onClick={props.onToggleDelamainSidebar}>
+              <BotIcon className="size-4 shrink-0" />
+              {props.delamainSidebarOpen ? "Hide delamain sidebar" : "Show delamain sidebar"}
             </MenuItem>
           </>
         ) : null}
